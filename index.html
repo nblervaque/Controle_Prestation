@@ -242,6 +242,36 @@
             background: #e9ecef;
         }
 
+        /* ===== Verrouillage tant qu'aucune agence n'est choisie ===== */
+        .agence-hint {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffe69c;
+            color: #7a5b00;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .agence-hint.show { display: block; }
+
+        /* Champ agence mis en avant quand la fiche est verrouillée */
+        #agence.agence-highlight {
+            border-color: #f0ad4e;
+            box-shadow: 0 0 0 3px rgba(240,173,78,0.25);
+        }
+
+        /* Sections grisées quand verrouillées */
+        .section-locked {
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .signature-pad-wrapper.locked {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
         /* ===== Firebase : bouton, statut, overlay ===== */
         .btn-firebase {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
@@ -539,6 +569,9 @@
         <!-- TAB 1: CRÉATION -->
         <div id="createTab" class="tab-content active">
             <form id="controlForm">
+                <div id="agenceHint" class="agence-hint">
+                    👉 Sélectionnez d'abord une <strong>agence</strong> ci-dessous pour pouvoir compléter la fiche.
+                </div>
                 <!-- INFORMATIONS -->
                 <div class="form-section">
                     <h3>📋 INFORMATIONS</h3>
@@ -1054,9 +1087,10 @@
                     sel.innerHTML += `<option value="${a}">${a}</option>`;
                 });
                 restoreAgence();
-                // Mémorise le choix pour les prochaines fiches de ce poste
+                // Mémorise le choix + verrouille/déverrouille la fiche à chaque changement
                 sel.addEventListener('change', () => {
                     try { localStorage.setItem('gs_agence', sel.value); } catch (e) {}
+                    updateFormLock();
                 });
             }
         }
@@ -1071,9 +1105,46 @@
             } catch (e) {}
         }
 
+        /* ============================================================
+           VERROUILLAGE DE LA FICHE
+           Tant qu'aucune agence n'est sélectionnée, aucun autre champ
+           n'est modifiable (ni les signatures, ni les boutons d'action).
+           ============================================================ */
+        function updateFormLock() {
+            const sel = document.getElementById('agence');
+            const enabled = !!(sel && sel.value);
+            signaturesEnabled = enabled;
+
+            const form = document.getElementById('controlForm');
+            if (form) {
+                form.querySelectorAll('input, select, textarea, button').forEach(el => {
+                    if (el.id === 'agence') return;      // le sélecteur d'agence reste toujours actif
+                    if (el.type === 'reset') return;     // le bouton Réinitialiser reste actif
+                    el.disabled = !enabled;
+                });
+            }
+
+            // Grise visuellement toutes les sections sauf celle qui contient l'agence
+            document.querySelectorAll('#createTab .form-section').forEach(sec => {
+                if (sec.querySelector('#agence')) return;
+                sec.classList.toggle('section-locked', !enabled);
+            });
+
+            // Signatures : grise et bloque les cadres
+            document.querySelectorAll('#createTab .signature-pad-wrapper').forEach(w => {
+                w.classList.toggle('locked', !enabled);
+            });
+
+            // Bandeau d'invite + mise en avant du champ agence
+            const hint = document.getElementById('agenceHint');
+            if (hint) hint.classList.toggle('show', !enabled);
+            if (sel) sel.classList.toggle('agence-highlight', !enabled);
+        }
+
         let allData = [];
         let filteredData = [];
         let charts = {};
+        let signaturesEnabled = false;   // les signatures ne sont actives qu'une fois l'agence choisie
 
         /* ============================================================
            GESTION DES SIGNATURES (souris + tactile, HiDPI)
@@ -1120,6 +1191,7 @@
             }
 
             function start(e) {
+                if (!signaturesEnabled) return;   // verrou : agence non sélectionnée
                 e.preventDefault();
                 pad.drawing = true;
                 const p = getPos(e);
@@ -1190,6 +1262,7 @@
             populateAgences();
             initSignaturePad('signatureClient');
             initSignaturePad('signatureControleur');
+            updateFormLock();   // verrouille la fiche si aucune agence n'est encore choisie
             // Réinitialise aussi les signatures quand on clique sur "Réinitialiser"
             const form = document.getElementById('controlForm');
             if (form) {
@@ -1198,6 +1271,7 @@
                         clearSignature('signatureClient');
                         clearSignature('signatureControleur');
                         restoreAgence();
+                        updateFormLock();
                     }, 0);
                 });
             }
@@ -1573,6 +1647,7 @@
                     clearSignature('signatureClient');
                     clearSignature('signatureControleur');
                     restoreAgence();
+                    updateFormLock();
                 }
             } catch (e) {
                 hideLoading();
