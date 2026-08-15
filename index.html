@@ -544,6 +544,14 @@
                     <h3>📋 INFORMATIONS</h3>
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Agence *</label>
+                            <select id="agence" required>
+                                <option value="">Sélectionner l'agence...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <label>Bailleur *</label>
                             <select id="bailleur" required>
                                 <option value="">Sélectionner...</option>
@@ -783,6 +791,12 @@
                     <h3>🔍 Filtres</h3>
                     <div class="filters-grid">
                         <div class="filter-group">
+                            <label>Agence</label>
+                            <select id="filterAgence" onchange="applyFilters()">
+                                <option value="">Toutes</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
                             <label>Bailleur</label>
                             <select id="filterBailleur" onchange="applyFilters()">
                                 <option value="">Tous</option>
@@ -870,6 +884,14 @@
                         <h3>🏢 Répartition par Bailleur</h3>
                         <canvas id="bailleurChart"></canvas>
                     </div>
+                    <div class="chart-container">
+                        <h3>🏬 Contrôles par Agence</h3>
+                        <canvas id="agenceChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>🏬 Conformité moyenne par Agence</h3>
+                        <canvas id="agenceConfChart"></canvas>
+                    </div>
                     <div class="chart-container full-width-chart">
                         <h3>📈 Évolution de la Satisfaction dans le Temps</h3>
                         <canvas id="evolutionChart"></canvas>
@@ -904,6 +926,7 @@
                             <thead>
                                 <tr>
                                     <th>Date</th>
+                                    <th>Agence</th>
                                     <th>Bailleur</th>
                                     <th>Client</th>
                                     <th>Ville</th>
@@ -1007,6 +1030,45 @@
                 .replace(/[^a-zA-Z0-9_-]+/g, '_')
                 .replace(/_+/g, '_')
                 .replace(/^_|_$/g, '') || 'NA';
+        }
+
+        /* ============================================================
+           AGENCES — liste centralisée (modifiable ici)
+           ============================================================ */
+        const AGENCES = [
+            "Marly (Siège)",
+            "Villeneuve d'Ascq",
+            "Saint-Laurent-Blangy",
+            "Cambrai",
+            "Maubeuge",
+            "Nieppe",
+            "ECO2 Énergies (Baralle)"
+        ];
+
+        // Remplit le menu de création et pré-sélectionne l'agence mémorisée sur ce poste
+        function populateAgences() {
+            const sel = document.getElementById('agence');
+            if (sel) {
+                sel.innerHTML = '<option value="">Sélectionner l\'agence...</option>';
+                AGENCES.forEach(a => {
+                    sel.innerHTML += `<option value="${a}">${a}</option>`;
+                });
+                restoreAgence();
+                // Mémorise le choix pour les prochaines fiches de ce poste
+                sel.addEventListener('change', () => {
+                    try { localStorage.setItem('gs_agence', sel.value); } catch (e) {}
+                });
+            }
+        }
+
+        // Réapplique l'agence mémorisée (utile après réinitialisation du formulaire)
+        function restoreAgence() {
+            const sel = document.getElementById('agence');
+            if (!sel) return;
+            try {
+                const saved = localStorage.getItem('gs_agence');
+                if (saved && AGENCES.indexOf(saved) !== -1) sel.value = saved;
+            } catch (e) {}
         }
 
         let allData = [];
@@ -1125,6 +1187,7 @@
         // Initialisation au chargement
         window.addEventListener('DOMContentLoaded', () => {
             initFirebase();
+            populateAgences();
             initSignaturePad('signatureClient');
             initSignaturePad('signatureControleur');
             // Réinitialise aussi les signatures quand on clique sur "Réinitialiser"
@@ -1134,6 +1197,7 @@
                     setTimeout(() => {
                         clearSignature('signatureClient');
                         clearSignature('signatureControleur');
+                        restoreAgence();
                     }, 0);
                 });
             }
@@ -1154,7 +1218,7 @@
 
         async function generatePDF() {
             const data = collectFormData();
-            if (!data.bailleur || !data.nomClient) {
+            if (!data.agence || !data.bailleur || !data.nomClient) {
                 alert('Veuillez remplir tous les champs obligatoires (*)');
                 return;
             }
@@ -1187,6 +1251,10 @@
             doc.setFont(undefined, 'bold');
             doc.text('FICHE DE CONTROLE PRESTATION', 105, 20, { align: 'center' });
 
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Agence : ${data.agence || '-'}`, 195, 30, { align: 'right' });
+
             // Section INFORMATIONS
             let y = 45;
             doc.setFillColor(102, 126, 234);
@@ -1201,6 +1269,10 @@
             doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
 
+            doc.setFont(undefined, 'bold');
+            doc.text(`Agence : ${data.agence}`, 15, y);
+            doc.setFont(undefined, 'normal');
+            y += 6;
             doc.text(`Bailleur : ${data.bailleur}`, 15, y);
             doc.text(`Code logement : ${data.codeLogement}`, 120, y);
             y += 6;
@@ -1399,6 +1471,7 @@
 
         function collectFormData() {
             return {
+                agence: document.getElementById('agence').value,
                 bailleur: document.getElementById('bailleur').value,
                 codeLogement: document.getElementById('codeLogement').value,
                 nomClient: document.getElementById('nomClient').value,
@@ -1437,7 +1510,7 @@
         function saveAsJSON() {
             const data = collectFormData();
 
-            if (!data.bailleur || !data.nomClient) {
+            if (!data.agence || !data.bailleur || !data.nomClient) {
                 alert('Veuillez remplir tous les champs obligatoires (*)');
                 return;
             }
@@ -1465,7 +1538,7 @@
             }
 
             const data = collectFormData();
-            if (!data.bailleur || !data.nomClient) {
+            if (!data.agence || !data.bailleur || !data.nomClient) {
                 alert('Veuillez remplir tous les champs obligatoires (*)');
                 return;
             }
@@ -1499,6 +1572,7 @@
                     document.getElementById('dateControle').valueAsDate = new Date();
                     clearSignature('signatureClient');
                     clearSignature('signatureControleur');
+                    restoreAgence();
                 }
             } catch (e) {
                 hideLoading();
@@ -1628,9 +1702,16 @@
         }
 
         function populateFilters() {
+            const agences = [...new Set(allData.map(d => d.agence))].filter(a => a).sort();
             const bailleurs = [...new Set(allData.map(d => d.bailleur))].sort();
             const intervenants = [...new Set(allData.map(d => d.intervenant))].filter(i => i).sort();
             const controleurs = [...new Set(allData.map(d => d.controleur))].filter(c => c).sort();
+
+            const filterAgence = document.getElementById('filterAgence');
+            filterAgence.innerHTML = '<option value="">Toutes</option>';
+            agences.forEach(a => {
+                filterAgence.innerHTML += `<option value="${a}">${a}</option>`;
+            });
 
             const filterBailleur = document.getElementById('filterBailleur');
             filterBailleur.innerHTML = '<option value="">Tous</option>';
@@ -1652,6 +1733,7 @@
         }
 
         function applyFilters() {
+            const agence = document.getElementById('filterAgence').value;
             const bailleur = document.getElementById('filterBailleur').value;
             const prestation = document.getElementById('filterPrestation').value;
             const intervenant = document.getElementById('filterIntervenant').value;
@@ -1660,6 +1742,7 @@
             const dateFin = document.getElementById('filterDateFin').value;
 
             filteredData = allData.filter(d => {
+                if (agence && d.agence !== agence) return false;
                 if (bailleur && d.bailleur !== bailleur) return false;
                 if (prestation && d.typePrestation !== prestation) return false;
                 if (intervenant && d.intervenant !== intervenant) return false;
@@ -1679,6 +1762,7 @@
         }
 
         function resetFilters() {
+            document.getElementById('filterAgence').value = '';
             document.getElementById('filterBailleur').value = '';
             document.getElementById('filterPrestation').value = '';
             document.getElementById('filterIntervenant').value = '';
@@ -1733,6 +1817,8 @@
             createConformiteChart();
             createIntervenantChart();
             createBailleurChart();
+            createAgenceChart();
+            createAgenceConfChart();
             createEvolutionChart();
             createTypeChart();
             createNCChart();
@@ -1884,6 +1970,73 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true
+                }
+            });
+        }
+
+        function createAgenceChart() {
+            const ctx = document.getElementById('agenceChart');
+            if (!ctx) return;
+            if (charts.agence) charts.agence.destroy();
+
+            const agences = {};
+            filteredData.forEach(d => {
+                const a = d.agence || 'Non renseignée';
+                agences[a] = (agences[a] || 0) + 1;
+            });
+
+            charts.agence = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(agences),
+                    datasets: [{
+                        label: 'Nombre de contrôles',
+                        data: Object.values(agences),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+
+        function createAgenceConfChart() {
+            const ctx = document.getElementById('agenceConfChart');
+            if (!ctx) return;
+            if (charts.agenceConf) charts.agenceConf.destroy();
+
+            const agg = {};
+            filteredData.forEach(d => {
+                const a = d.agence || 'Non renseignée';
+                const controles = Object.values(d.controles || {});
+                const conformes = controles.filter(c => c === true).length;
+                if (!agg[a]) agg[a] = { conf: 0, tot: 0 };
+                agg[a].conf += conformes;
+                agg[a].tot += controles.length;
+            });
+
+            const labels = Object.keys(agg);
+            const values = labels.map(a => agg[a].tot ? Math.round((agg[a].conf / agg[a].tot) * 100) : 0);
+
+            charts.agenceConf = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Conformité moyenne (%)',
+                        data: values,
+                        backgroundColor: values.map(v => v >= 90 ? '#34d399' : v >= 70 ? '#fbbf24' : '#ef4444')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 100 } }
                 }
             });
         }
@@ -2180,6 +2333,7 @@
                     : '';
                 row.innerHTML = `
                     <td>${new Date(d.dateControle).toLocaleDateString('fr-FR')}</td>
+                    <td>${d.agence || '—'}</td>
                     <td>${d.bailleur}</td>
                     <td>${d.nomClient}</td>
                     <td>${d.ville}</td>
@@ -2203,7 +2357,7 @@
             }
 
             const headers = [
-                'Date', 'Bailleur', 'Code Logement', 'Client', 'Adresse', 'Ville',
+                'Date', 'Agence', 'Bailleur', 'Code Logement', 'Client', 'Adresse', 'Ville',
                 'Type Prestation', 'Intervenant', 'Contrôleur',
                 'Présentation', 'Nettoyage', 'Respect RDV',
                 'Bouches Extraction', 'DAAF', 'Modules Entrée', 'Ventouse', 'Réseau Gaz',
@@ -2221,6 +2375,7 @@
 
                 const row = [
                     new Date(d.dateControle).toLocaleDateString('fr-FR'),
+                    d.agence || '',
                     d.bailleur,
                     d.codeLogement,
                     d.nomClient,
