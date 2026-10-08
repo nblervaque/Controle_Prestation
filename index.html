@@ -18,7 +18,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -178,6 +178,25 @@
             background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
         }
 
+        input, select, button, textarea { font-family: inherit; }
+
+        /* ===== Points obligatoires selon le type de prestation ===== */
+        .required-hint {
+            margin: 0 0 12px;
+            padding: 10px 14px;
+            background: #eef2ff;
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            color: #1e3c72;
+            font-size: 0.9em;
+        }
+        .checkbox-item.required { border: 2px solid #c7d2fe; background: #f8f9ff; }
+        .checkbox-item.required label::after { content: ' *'; color: #c0392b; font-weight: 700; }
+        .checkbox-item.not-required { opacity: 0.45; background: #f1f3f5; cursor: not-allowed; }
+        .checkbox-item.not-required input,
+        .checkbox-item.not-required label { cursor: not-allowed; }
+        .checkbox-item.not-required label::after { content: ' (non requis)'; font-size: 0.8em; font-style: italic; color: #6c757d; }
+
         /* ===== Signatures ===== */
         .signature-container {
             display: grid;
@@ -240,36 +259,6 @@
 
         .signature-clear:hover {
             background: #e9ecef;
-        }
-
-        /* ===== Verrouillage tant qu'aucune agence n'est choisie ===== */
-        .agence-hint {
-            display: none;
-            background: #fff3cd;
-            border: 1px solid #ffe69c;
-            color: #7a5b00;
-            padding: 14px 18px;
-            border-radius: 10px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .agence-hint.show { display: block; }
-
-        /* Champ agence mis en avant quand la fiche est verrouillée */
-        #agence.agence-highlight {
-            border-color: #f0ad4e;
-            box-shadow: 0 0 0 3px rgba(240,173,78,0.25);
-        }
-
-        /* Sections grisées quand verrouillées */
-        .section-locked {
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-        .signature-pad-wrapper.locked {
-            opacity: 0.5;
-            pointer-events: none;
         }
 
         /* ===== Firebase : bouton, statut, overlay ===== */
@@ -569,27 +558,18 @@
         <!-- TAB 1: CRÉATION -->
         <div id="createTab" class="tab-content active">
             <form id="controlForm">
-                <div id="agenceHint" class="agence-hint">
-                    👉 Sélectionnez d'abord une <strong>agence</strong> ci-dessous pour pouvoir compléter la fiche.
-                </div>
                 <!-- INFORMATIONS -->
                 <div class="form-section">
                     <h3>📋 INFORMATIONS</h3>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Agence *</label>
-                            <select id="agence" required>
-                                <option value="">Sélectionner l'agence...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Bailleur *</label>
+                            <label>Client *</label>
                             <select id="bailleur" required>
                                 <option value="">Sélectionner...</option>
                                 <option value="3F NOTRE LOGIS">3F NOTRE LOGIS</option>
                                 <option value="CDC HABITAT">CDC HABITAT</option>
+                                <option value="CLIENT PARTICULIER">CLIENT PARTICULIER</option>
+                                <option value="FOURMIES HABITAT">FOURMIES HABITAT</option>
                                 <option value="HABITAT HAUT DE FRANCE">HABITAT HAUT DE FRANCE</option>
                                 <option value="MAISONS ET CITES">MAISONS ET CITES</option>
                                 <option value="SIA HABITAT">SIA HABITAT</option>
@@ -661,6 +641,7 @@
                         <div class="form-group">
                             <label>Présentation du technicien</label>
                             <select id="presentation">
+                                <option value="" selected disabled>Sélectionner...</option>
                                 <option value="Bon">✅ Bon</option>
                                 <option value="Moyen">⚠️ Moyen</option>
                                 <option value="Mauvais">❌ Mauvais</option>
@@ -669,6 +650,7 @@
                         <div class="form-group">
                             <label>Nettoyage du chantier</label>
                             <select id="nettoyage">
+                                <option value="" selected disabled>Sélectionner...</option>
                                 <option value="Bon">✅ Bon</option>
                                 <option value="Moyen">⚠️ Moyen</option>
                                 <option value="Mauvais">❌ Mauvais</option>
@@ -677,6 +659,7 @@
                         <div class="form-group">
                             <label>Respect du rendez-vous</label>
                             <select id="respect">
+                                <option value="" selected disabled>Sélectionner...</option>
                                 <option value="Bon">✅ Bon</option>
                                 <option value="Moyen">⚠️ Moyen</option>
                                 <option value="Mauvais">❌ Mauvais</option>
@@ -688,6 +671,7 @@
                 <!-- CONTRÔLE TECHNIQUE -->
                 <div class="form-section">
                     <h3>✅ CONTRÔLE DE LA PRESTATION</h3>
+                    <div class="required-hint" id="requiredHint"></div>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="checkbox" id="bouchesExtraction">
@@ -722,7 +706,7 @@
                             <label for="trous">Trous bouchés</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="checkbox" id="flexibleGaz" checked>
+                            <input type="checkbox" id="flexibleGaz">
                             <label for="flexibleGaz">Flexible Gaz valide ou bouchon</label>
                         </div>
                         <div class="checkbox-item">
@@ -734,12 +718,12 @@
                             <label for="chaudiere">Chaudière entretenue correct.</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="checkbox" id="attestation" checked>
+                            <input type="checkbox" id="attestation">
                             <label for="attestation">Attestation complétée</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="ventilation">
-                            <label for="ventilation">Ventilation fonctionnelle</label>
+                            <label for="ventilation">Ventilation fonctionnelle et conforme</label>
                         </div>
                     </div>
 
@@ -824,13 +808,7 @@
                     <h3>🔍 Filtres</h3>
                     <div class="filters-grid">
                         <div class="filter-group">
-                            <label>Agence</label>
-                            <select id="filterAgence" onchange="applyFilters()">
-                                <option value="">Toutes</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Bailleur</label>
+                            <label>Client</label>
                             <select id="filterBailleur" onchange="applyFilters()">
                                 <option value="">Tous</option>
                             </select>
@@ -914,16 +892,8 @@
                         <canvas id="intervenantChart"></canvas>
                     </div>
                     <div class="chart-container">
-                        <h3>🏢 Répartition par Bailleur</h3>
+                        <h3>🏢 Répartition par Client</h3>
                         <canvas id="bailleurChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <h3>🏬 Contrôles par Agence</h3>
-                        <canvas id="agenceChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <h3>🏬 Conformité moyenne par Agence</h3>
-                        <canvas id="agenceConfChart"></canvas>
                     </div>
                     <div class="chart-container full-width-chart">
                         <h3>📈 Évolution de la Satisfaction dans le Temps</h3>
@@ -959,9 +929,8 @@
                             <thead>
                                 <tr>
                                     <th>Date</th>
-                                    <th>Agence</th>
-                                    <th>Bailleur</th>
                                     <th>Client</th>
+                                    <th>Nom du client</th>
                                     <th>Ville</th>
                                     <th>Type</th>
                                     <th>Intervenant</th>
@@ -1066,85 +1035,96 @@
         }
 
         /* ============================================================
-           AGENCES — liste centralisée (modifiable ici)
+           RÈGLES DE CONTRÔLE SELON LE TYPE DE PRESTATION
+           ------------------------------------------------------------
+           - Visite préventive : tous les points sont obligatoires
+           - Dépannage         : seuls 6 points sont obligatoires
+           - Installation      : seuls 7 points sont obligatoires
+           Un point non obligatoire est enregistré à null ("non requis") :
+           il n'est ni compté en conformité, ni en non-conformité, et ne
+           dégrade donc jamais la note du technicien.
            ============================================================ */
-        const AGENCES = [
-            "Marly (Siège)",
-            "Villeneuve d'Ascq",
-            "Saint-Laurent-Blangy",
-            "Cambrai",
-            "Maubeuge",
-            "Nieppe",
-            "ECO2 Énergies (Baralle)"
-        ];
+        const CONTROL_LABELS = {
+            bouchesExtraction: 'Bouches extraction',
+            daaf: 'DAAF',
+            modulesEntree: 'Modules entrée',
+            ventouse: 'Ventouse',
+            reseauGaz: 'Réseau gaz',
+            liaison: 'Liaison équipot.',
+            robinetGaz: 'Robinet gaz',
+            trous: 'Trous bouchés',
+            flexibleGaz: 'Flexible gaz',
+            co: 'CO ambiant',
+            chaudiere: 'Chaudière',
+            attestation: 'Attestation',
+            ventilation: 'Ventilation'
+        };
 
-        // Remplit le menu de création et pré-sélectionne l'agence mémorisée sur ce poste
-        function populateAgences() {
-            const sel = document.getElementById('agence');
-            if (sel) {
-                sel.innerHTML = '<option value="">Sélectionner l\'agence...</option>';
-                AGENCES.forEach(a => {
-                    sel.innerHTML += `<option value="${a}">${a}</option>`;
-                });
-                restoreAgence();
-                // Mémorise le choix + verrouille/déverrouille la fiche à chaque changement
-                sel.addEventListener('change', () => {
-                    try { localStorage.setItem('gs_agence', sel.value); } catch (e) {}
-                    updateFormLock();
-                });
+        const REQUIRED_BY_TYPE = {
+            'Visite préventive': Object.keys(CONTROL_LABELS),
+            'Dépannage': ['daaf', 'reseauGaz', 'flexibleGaz', 'co', 'ventouse', 'robinetGaz'],
+            'Installation': ['ventouse', 'reseauGaz', 'liaison', 'trous', 'co', 'attestation', 'ventilation']
+        };
+
+        function getSelectedType() {
+            const r = document.querySelector('input[name="typePrestation"]:checked');
+            return r ? r.value : '';
+        }
+
+        // Grise / active les points selon le type choisi
+        function applyTypeRules() {
+            const type = getSelectedType();
+            const req = REQUIRED_BY_TYPE[type];
+            Object.keys(CONTROL_LABELS).forEach(k => {
+                const el = document.getElementById(k);
+                if (!el) return;
+                const item = el.closest('.checkbox-item');
+                const isReq = !req || req.includes(k);
+                el.disabled = !isReq;
+                item.classList.toggle('not-required', !isReq);
+                item.classList.toggle('required', !!req && isReq);
+            });
+            const hint = document.getElementById('requiredHint');
+            if (!hint) return;
+            if (!req) {
+                hint.textContent = 'Sélectionnez un type de prestation : les points obligatoires seront alors indiqués par * et les autres seront grisés.';
+            } else if (type === 'Visite préventive') {
+                hint.textContent = 'Visite préventive : les ' + req.length + ' points sont à contrôler.';
+            } else {
+                hint.textContent = type + ' : ' + req.length + ' points obligatoires (marqués *). Les autres points ne sont pas requis et n\'affectent pas la note du technicien.';
             }
         }
 
-        // Réapplique l'agence mémorisée (utile après réinitialisation du formulaire)
-        function restoreAgence() {
-            const sel = document.getElementById('agence');
-            if (!sel) return;
-            try {
-                const saved = localStorage.getItem('gs_agence');
-                if (saved && AGENCES.indexOf(saved) !== -1) sel.value = saved;
-            } catch (e) {}
+        // Valeurs des points de contrôle : true / false si requis, null sinon
+        function collectControles() {
+            const req = REQUIRED_BY_TYPE[getSelectedType()];
+            const out = {};
+            Object.keys(CONTROL_LABELS).forEach(k => {
+                const isReq = !req || req.includes(k);
+                out[k] = isReq ? document.getElementById(k).checked : null;
+            });
+            return out;
         }
 
-        /* ============================================================
-           VERROUILLAGE DE LA FICHE
-           Tant qu'aucune agence n'est sélectionnée, aucun autre champ
-           n'est modifiable (ni les signatures, ni les boutons d'action).
-           ============================================================ */
-        function updateFormLock() {
-            const sel = document.getElementById('agence');
-            const enabled = !!(sel && sel.value);
-            signaturesEnabled = enabled;
-
-            const form = document.getElementById('controlForm');
-            if (form) {
-                form.querySelectorAll('input, select, textarea, button').forEach(el => {
-                    if (el.id === 'agence') return;      // le sélecteur d'agence reste toujours actif
-                    if (el.type === 'reset') return;     // le bouton Réinitialiser reste actif
-                    el.disabled = !enabled;
-                });
-            }
-
-            // Grise visuellement toutes les sections sauf celle qui contient l'agence
-            document.querySelectorAll('#createTab .form-section').forEach(sec => {
-                if (sec.querySelector('#agence')) return;
-                sec.classList.toggle('section-locked', !enabled);
+        // Normalise une fiche (y compris anciennes fiches JSON / Firebase) selon son type
+        function normalizeControles(d) {
+            const req = REQUIRED_BY_TYPE[d.typePrestation];
+            const src = d.controles || {};
+            const out = {};
+            Object.keys(CONTROL_LABELS).forEach(k => {
+                const isReq = !req || req.includes(k);
+                out[k] = (isReq && src[k] !== undefined && src[k] !== null) ? !!src[k] : null;
             });
-
-            // Signatures : grise et bloque les cadres
-            document.querySelectorAll('#createTab .signature-pad-wrapper').forEach(w => {
-                w.classList.toggle('locked', !enabled);
-            });
-
-            // Bandeau d'invite + mise en avant du champ agence
-            const hint = document.getElementById('agenceHint');
-            if (hint) hint.classList.toggle('show', !enabled);
-            if (sel) sel.classList.toggle('agence-highlight', !enabled);
+            return out;
         }
+
+        function ouiNon(v) { return v === true ? 'Oui' : v === false ? 'Non' : 'N/A'; }
+
+        if (window.Chart) { Chart.defaults.font.family = 'Arial, Helvetica, sans-serif'; }
 
         let allData = [];
         let filteredData = [];
         let charts = {};
-        let signaturesEnabled = false;   // les signatures ne sont actives qu'une fois l'agence choisie
 
         /* ============================================================
            GESTION DES SIGNATURES (souris + tactile, HiDPI)
@@ -1191,7 +1171,6 @@
             }
 
             function start(e) {
-                if (!signaturesEnabled) return;   // verrou : agence non sélectionnée
                 e.preventDefault();
                 pad.drawing = true;
                 const p = getPos(e);
@@ -1259,10 +1238,12 @@
         // Initialisation au chargement
         window.addEventListener('DOMContentLoaded', () => {
             initFirebase();
-            populateAgences();
             initSignaturePad('signatureClient');
             initSignaturePad('signatureControleur');
-            updateFormLock();   // verrouille la fiche si aucune agence n'est encore choisie
+            document.querySelectorAll('input[name="typePrestation"]').forEach(r => r.addEventListener('change', applyTypeRules));
+            const formEl = document.getElementById('controlForm');
+            if (formEl) formEl.addEventListener('reset', () => setTimeout(applyTypeRules, 0));
+            applyTypeRules();
             // Réinitialise aussi les signatures quand on clique sur "Réinitialiser"
             const form = document.getElementById('controlForm');
             if (form) {
@@ -1270,8 +1251,6 @@
                     setTimeout(() => {
                         clearSignature('signatureClient');
                         clearSignature('signatureControleur');
-                        restoreAgence();
-                        updateFormLock();
                     }, 0);
                 });
             }
@@ -1292,8 +1271,8 @@
 
         async function generatePDF() {
             const data = collectFormData();
-            if (!data.agence || !data.bailleur || !data.nomClient) {
-                alert('Veuillez remplir tous les champs obligatoires (*)');
+            if (!data.bailleur || !data.nomClient || !data.typePrestation || !data.presentation || !data.nettoyage || !data.respect) {
+                alert('Veuillez remplir tous les champs obligatoires (*), dont le type de prestation et les trois évaluations (présentation, nettoyage, respect du rendez-vous).');
                 return;
             }
             const doc = buildPdfDoc(data);
@@ -1325,10 +1304,6 @@
             doc.setFont(undefined, 'bold');
             doc.text('FICHE DE CONTROLE PRESTATION', 105, 20, { align: 'center' });
 
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Agence : ${data.agence || '-'}`, 195, 30, { align: 'right' });
-
             // Section INFORMATIONS
             let y = 45;
             doc.setFillColor(102, 126, 234);
@@ -1343,11 +1318,7 @@
             doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
 
-            doc.setFont(undefined, 'bold');
-            doc.text(`Agence : ${data.agence}`, 15, y);
-            doc.setFont(undefined, 'normal');
-            y += 6;
-            doc.text(`Bailleur : ${data.bailleur}`, 15, y);
+            doc.text(`Client : ${data.bailleur}`, 15, y);
             doc.text(`Code logement : ${data.codeLogement}`, 120, y);
             y += 6;
             doc.text(`Nom du client : ${data.nomClient}`, 15, y);
@@ -1433,50 +1404,49 @@
                 ['Robinet Gaz de type ROAI', data.controles.robinetGaz, 'Trous bouchés', data.controles.trous],
                 ['Flexible Gaz valide ou bouchon', data.controles.flexibleGaz, 'CO Ambiant = 0 PPM', data.controles.co],
                 ['Chaudière entretenue correct.', data.controles.chaudiere, 'Attestation complétée', data.controles.attestation],
-                ['Ventilation fonctionnelle', data.controles.ventilation, 'Mesure en Pa cuisine', data.mesurePa]
+                ['Ventilation fonctionnelle et conforme', data.controles.ventilation, 'Mesure en Pa cuisine', data.mesurePa]
             ];
+
+            // Cases Oui / Non, ou mention "Non requis" si le point n'est pas à contrôler pour ce type
+            const drawYesNo = (val, xOui, xNon, yPos) => {
+                if (val === null || val === undefined) {
+                    doc.setTextColor(130, 130, 130);
+                    doc.setFont(undefined, 'italic');
+                    doc.text('Non requis', xOui, yPos);
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    return;
+                }
+                doc.setDrawColor(0);
+                doc.setLineWidth(0.5);
+                doc.rect(xOui, yPos - 3, 4, 4);
+                if (val === true) {
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(xOui, yPos - 3, 4, 4, 'F');
+                }
+                doc.text('Oui', xOui + 6, yPos);
+                doc.rect(xNon, yPos - 3, 4, 4);
+                if (val === false) {
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(xNon, yPos - 3, 4, 4, 'F');
+                }
+                doc.text('Non', xNon + 6, yPos);
+            };
 
             controles.forEach((row, i) => {
                 const yPos = y + (i * 7);
-                
-                // Colonne gauche
-                doc.text(row[0] + ' :', 15, yPos);
-                
-                // Case Oui
-                doc.rect(75, yPos - 3, 4, 4);
-                if (row[1] === true) {
-                    doc.setFillColor(0, 0, 0);
-                    doc.rect(75, yPos - 3, 4, 4, 'F');
-                }
-                doc.text('Oui', 81, yPos);
-                
-                // Case Non
-                doc.rect(92, yPos - 3, 4, 4);
-                if (row[1] === false) {
-                    doc.setFillColor(0, 0, 0);
-                    doc.rect(92, yPos - 3, 4, 4, 'F');
-                }
-                doc.text('Non', 98, yPos);
 
-                // Colonne droite
+                const lbl = row[0] + ' :';
+                const small = lbl.length > 32;
+                if (small) doc.setFontSize(8);
+                doc.text(lbl, 15, yPos);
+                if (small) doc.setFontSize(9);
+                drawYesNo(row[1], 75, 92, yPos);
+
                 if (row[2]) {
                     doc.text(row[2] + ' :', 110, yPos);
-                    if (typeof row[3] === 'boolean') {
-                        // Case Oui
-                        doc.rect(170, yPos - 3, 4, 4);
-                        if (row[3] === true) {
-                            doc.setFillColor(0, 0, 0);
-                            doc.rect(170, yPos - 3, 4, 4, 'F');
-                        }
-                        doc.text('Oui', 176, yPos);
-                        
-                        // Case Non
-                        doc.rect(187, yPos - 3, 4, 4);
-                        if (row[3] === false) {
-                            doc.setFillColor(0, 0, 0);
-                            doc.rect(187, yPos - 3, 4, 4, 'F');
-                        }
-                        doc.text('Non', 193, yPos);
+                    if (typeof row[3] === 'boolean' || row[3] === null) {
+                        drawYesNo(row[3], 170, 187, yPos);
                     } else {
                         doc.text(row[3] || '', 170, yPos);
                     }
@@ -1545,7 +1515,6 @@
 
         function collectFormData() {
             return {
-                agence: document.getElementById('agence').value,
                 bailleur: document.getElementById('bailleur').value,
                 codeLogement: document.getElementById('codeLogement').value,
                 nomClient: document.getElementById('nomClient').value,
@@ -1558,21 +1527,7 @@
                 presentation: document.getElementById('presentation').value,
                 nettoyage: document.getElementById('nettoyage').value,
                 respect: document.getElementById('respect').value,
-                controles: {
-                    bouchesExtraction: document.getElementById('bouchesExtraction').checked,
-                    daaf: document.getElementById('daaf').checked,
-                    modulesEntree: document.getElementById('modulesEntree').checked,
-                    ventouse: document.getElementById('ventouse').checked,
-                    reseauGaz: document.getElementById('reseauGaz').checked,
-                    liaison: document.getElementById('liaison').checked,
-                    robinetGaz: document.getElementById('robinetGaz').checked,
-                    trous: document.getElementById('trous').checked,
-                    flexibleGaz: document.getElementById('flexibleGaz').checked,
-                    co: document.getElementById('co').checked,
-                    chaudiere: document.getElementById('chaudiere').checked,
-                    attestation: document.getElementById('attestation').checked,
-                    ventilation: document.getElementById('ventilation').checked
-                },
+                controles: collectControles(),
                 mesurePa: document.getElementById('mesurePa').value,
                 remarque: document.getElementById('remarque').value,
                 signatureClient: getSignatureDataURL('signatureClient'),
@@ -1584,8 +1539,8 @@
         function saveAsJSON() {
             const data = collectFormData();
 
-            if (!data.agence || !data.bailleur || !data.nomClient) {
-                alert('Veuillez remplir tous les champs obligatoires (*)');
+            if (!data.bailleur || !data.nomClient || !data.typePrestation || !data.presentation || !data.nettoyage || !data.respect) {
+                alert('Veuillez remplir tous les champs obligatoires (*), dont le type de prestation et les trois évaluations (présentation, nettoyage, respect du rendez-vous).');
                 return;
             }
 
@@ -1612,8 +1567,8 @@
             }
 
             const data = collectFormData();
-            if (!data.agence || !data.bailleur || !data.nomClient) {
-                alert('Veuillez remplir tous les champs obligatoires (*)');
+            if (!data.bailleur || !data.nomClient || !data.typePrestation || !data.presentation || !data.nettoyage || !data.respect) {
+                alert('Veuillez remplir tous les champs obligatoires (*), dont le type de prestation et les trois évaluations (présentation, nettoyage, respect du rendez-vous).');
                 return;
             }
 
@@ -1646,8 +1601,6 @@
                     document.getElementById('dateControle').valueAsDate = new Date();
                     clearSignature('signatureClient');
                     clearSignature('signatureControleur');
-                    restoreAgence();
-                    updateFormLock();
                 }
             } catch (e) {
                 hideLoading();
@@ -1776,17 +1729,88 @@
             }
         }
 
+        /* ============================================================
+           REGROUPEMENT DES CONTRÔLEURS (onglet analyse)
+           ------------------------------------------------------------
+           Fusionne automatiquement les variantes d'un même contrôleur :
+           casse, accents, espaces en trop, ordre prénom/nom,
+           initiales (ex. MN, M.N.) et nom seul quand il est sans ambiguïté.
+           Pour rattacher un NUMÉRO (ou tout autre code) à une personne,
+           ajoutez une ligne dans CONTROLEUR_ALIASES, par exemple :
+               '47': 'Matthieu Nevejans',
+           ============================================================ */
+        const CONTROLEUR_ALIASES = {
+        };
+
+        function ctrlTokens(str) {
+            return (str || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+        }
+        function ctrlKey(str) { return ctrlTokens(str).sort().join(' '); }
+        function ctrlTitle(str) {
+            return str.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        }
+        function ctrlSortLetters(str) { return str.split('').sort().join(''); }
+
+        function unifyControleurs() {
+            const groups = {};   // clé triée -> { best, bestCount, total }
+            const forms = {};
+            allData.forEach(d => {
+                if (d.controleurOriginal === undefined) d.controleurOriginal = d.controleur;
+                const raw = (d.controleurOriginal || '').toString().trim().replace(/\s+/g, ' ');
+                const k = ctrlKey(raw);
+                if (!k) return;
+                forms[raw] = (forms[raw] || 0) + 1;
+                const g = groups[k] = groups[k] || { best: raw, bestCount: 0 };
+                if (forms[raw] > g.bestCount) { g.best = raw; g.bestCount = forms[raw]; }
+            });
+
+            // Alias manuels (numéros, codes…)
+            const aliasByKey = {};
+            Object.keys(CONTROLEUR_ALIASES).forEach(a => { aliasByKey[ctrlKey(a)] = CONTROLEUR_ALIASES[a]; });
+
+            const isFull = k => { const t = k.split(' '); return t.length >= 2 && t.some(x => x.length > 1); };
+            const fulls = Object.keys(groups).filter(isFull);
+
+            const map = {};
+            Object.keys(groups).forEach(k => {
+                map[k] = k;
+                if (aliasByKey[k]) {
+                    const tk = ctrlKey(aliasByKey[k]);
+                    if (!groups[tk]) groups[tk] = { best: aliasByKey[k], bestCount: 0 };
+                    map[k] = tk;
+                    return;
+                }
+                if (isFull(k)) return;
+                const raw = groups[k].best;
+                const toks = k.split(' ');
+                const letters = ctrlTokens(raw).join('');
+
+                // Initiales : MN, M.N., M N …
+                if (raw === raw.toUpperCase() && /^[a-z]{2,3}$/.test(letters) && /[A-ZÀ-Ý]/.test(raw)) {
+                    const m = fulls.filter(f => ctrlSortLetters(f.split(' ').map(t => t[0]).join('')) === ctrlSortLetters(letters));
+                    if (m.length === 1) { map[k] = m[0]; return; }
+                }
+                // Nom ou prénom seul, rattaché au nom complet unique qui le contient
+                if (toks.length === 1 && /[a-z]/.test(toks[0])) {
+                    const m = fulls.filter(f => f.split(' ').includes(toks[0]));
+                    if (m.length === 1) map[k] = m[0];
+                }
+            });
+
+            allData.forEach(d => {
+                const raw = (d.controleurOriginal || '').toString().trim().replace(/\s+/g, ' ');
+                const k = ctrlKey(raw);
+                if (!k) { d.controleur = ''; return; }
+                d.controleur = ctrlTitle(groups[map[k]].best);
+            });
+        }
+
         function populateFilters() {
-            const agences = [...new Set(allData.map(d => d.agence))].filter(a => a).sort();
+            unifyControleurs();
             const bailleurs = [...new Set(allData.map(d => d.bailleur))].sort();
             const intervenants = [...new Set(allData.map(d => d.intervenant))].filter(i => i).sort();
             const controleurs = [...new Set(allData.map(d => d.controleur))].filter(c => c).sort();
-
-            const filterAgence = document.getElementById('filterAgence');
-            filterAgence.innerHTML = '<option value="">Toutes</option>';
-            agences.forEach(a => {
-                filterAgence.innerHTML += `<option value="${a}">${a}</option>`;
-            });
 
             const filterBailleur = document.getElementById('filterBailleur');
             filterBailleur.innerHTML = '<option value="">Tous</option>';
@@ -1808,7 +1832,6 @@
         }
 
         function applyFilters() {
-            const agence = document.getElementById('filterAgence').value;
             const bailleur = document.getElementById('filterBailleur').value;
             const prestation = document.getElementById('filterPrestation').value;
             const intervenant = document.getElementById('filterIntervenant').value;
@@ -1817,7 +1840,6 @@
             const dateFin = document.getElementById('filterDateFin').value;
 
             filteredData = allData.filter(d => {
-                if (agence && d.agence !== agence) return false;
                 if (bailleur && d.bailleur !== bailleur) return false;
                 if (prestation && d.typePrestation !== prestation) return false;
                 if (intervenant && d.intervenant !== intervenant) return false;
@@ -1837,7 +1859,6 @@
         }
 
         function resetFilters() {
-            document.getElementById('filterAgence').value = '';
             document.getElementById('filterBailleur').value = '';
             document.getElementById('filterPrestation').value = '';
             document.getElementById('filterIntervenant').value = '';
@@ -1850,6 +1871,9 @@
         }
 
         function displayStats() {
+            // Applique les règles par type (anciennes fiches comprises)
+            allData.forEach(d => { d.controles = normalizeControles(d); });
+
             document.getElementById('statsSection').style.display = 'block';
 
             const total = filteredData.length;
@@ -1867,13 +1891,13 @@
             let totalNC = 0;
 
             filteredData.forEach(d => {
-                const controles = Object.values(d.controles || {});
+                const controles = Object.values(d.controles || {}).filter(c => c !== null && c !== undefined);
                 totalControles += controles.length;
                 totalConformes += controles.filter(c => c === true).length;
                 totalNC += controles.filter(c => c === false).length;
             });
 
-            const avgConformite = Math.round((totalConformes / totalControles) * 100);
+            const avgConformite = totalControles ? Math.round((totalConformes / totalControles) * 100) : 0;
 
             // Taux RDV respectés
             const scores = { 'Bon': 1, 'Moyen': 0, 'Mauvais': 0 };
@@ -1892,8 +1916,6 @@
             createConformiteChart();
             createIntervenantChart();
             createBailleurChart();
-            createAgenceChart();
-            createAgenceConfChart();
             createEvolutionChart();
             createTypeChart();
             createNCChart();
@@ -1956,8 +1978,9 @@
             };
 
             Object.keys(labels).forEach(key => {
-                const count = filteredData.filter(d => d.controles[key]).length;
-                conformiteStats[key] = Math.round((count / filteredData.length) * 100);
+                const applicable = filteredData.filter(d => d.controles[key] === true || d.controles[key] === false);
+                const count = applicable.filter(d => d.controles[key] === true).length;
+                conformiteStats[key] = applicable.length ? Math.round((count / applicable.length) * 100) : null;
             });
 
             charts.conformite = new Chart(ctx, {
@@ -1965,10 +1988,10 @@
                 data: {
                     labels: Object.keys(conformiteStats).map(k => labels[k]),
                     datasets: [{
-                        label: 'Taux conformité (%)',
+                        label: 'Taux conformité (%) - fiches où le point est requis',
                         data: Object.values(conformiteStats),
                         backgroundColor: Object.values(conformiteStats).map(v => 
-                            v >= 90 ? '#34d399' : v >= 70 ? '#fbbf24' : '#ef4444'
+                            v === null ? '#ced4da' : v >= 90 ? '#34d399' : v >= 70 ? '#fbbf24' : '#ef4444'
                         )
                     }]
                 },
@@ -1998,9 +2021,9 @@
                 stats[name].count++;
                 stats[name].satisfaction += ((scores[d.presentation] || 0) + (scores[d.nettoyage] || 0) + (scores[d.respect] || 0)) / 3;
                 
-                const controles = Object.values(d.controles || {});
+                const controles = Object.values(d.controles || {}).filter(c => c !== null && c !== undefined);
                 const conformes = controles.filter(c => c === true).length;
-                stats[name].conformite += (conformes / controles.length) * 100;
+                stats[name].conformite += controles.length ? (conformes / controles.length) * 100 : 0;
             });
 
             const names = Object.keys(stats);
@@ -2045,73 +2068,6 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true
-                }
-            });
-        }
-
-        function createAgenceChart() {
-            const ctx = document.getElementById('agenceChart');
-            if (!ctx) return;
-            if (charts.agence) charts.agence.destroy();
-
-            const agences = {};
-            filteredData.forEach(d => {
-                const a = d.agence || 'Non renseignée';
-                agences[a] = (agences[a] || 0) + 1;
-            });
-
-            charts.agence = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(agences),
-                    datasets: [{
-                        label: 'Nombre de contrôles',
-                        data: Object.values(agences),
-                        backgroundColor: '#667eea'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                }
-            });
-        }
-
-        function createAgenceConfChart() {
-            const ctx = document.getElementById('agenceConfChart');
-            if (!ctx) return;
-            if (charts.agenceConf) charts.agenceConf.destroy();
-
-            const agg = {};
-            filteredData.forEach(d => {
-                const a = d.agence || 'Non renseignée';
-                const controles = Object.values(d.controles || {});
-                const conformes = controles.filter(c => c === true).length;
-                if (!agg[a]) agg[a] = { conf: 0, tot: 0 };
-                agg[a].conf += conformes;
-                agg[a].tot += controles.length;
-            });
-
-            const labels = Object.keys(agg);
-            const values = labels.map(a => agg[a].tot ? Math.round((agg[a].conf / agg[a].tot) * 100) : 0);
-
-            charts.agenceConf = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Conformité moyenne (%)',
-                        data: values,
-                        backgroundColor: values.map(v => v >= 90 ? '#34d399' : v >= 70 ? '#fbbf24' : '#ef4444')
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, max: 100 } }
                 }
             });
         }
@@ -2205,7 +2161,7 @@
 
             filteredData.forEach(d => {
                 Object.keys(d.controles || {}).forEach(key => {
-                    if (!d.controles[key]) {
+                    if (d.controles[key] === false) {
                         ncCounts[key] = (ncCounts[key] || 0) + 1;
                     }
                 });
@@ -2248,9 +2204,9 @@
                 stats[name].count++;
                 stats[name].satisfaction += ((scores[d.presentation] || 0) + (scores[d.nettoyage] || 0) + (scores[d.respect] || 0)) / 3;
                 
-                const controles = Object.values(d.controles || {});
+                const controles = Object.values(d.controles || {}).filter(c => c !== null && c !== undefined);
                 const conformes = controles.filter(c => c === true).length;
-                stats[name].conformite += (conformes / controles.length) * 100;
+                stats[name].conformite += controles.length ? (conformes / controles.length) * 100 : 0;
             });
 
             const data = Object.keys(stats).map(name => ({
@@ -2394,9 +2350,9 @@
             const scores = { 'Bon': 100, 'Moyen': 50, 'Mauvais': 0 };
 
             filteredData.forEach(d => {
-                const controles = Object.values(d.controles || {});
+                const controles = Object.values(d.controles || {}).filter(c => c !== null && c !== undefined);
                 const conformes = controles.filter(c => c === true).length;
-                const tauxConf = Math.round((conformes / controles.length) * 100);
+                const tauxConf = controles.length ? Math.round((conformes / controles.length) * 100) : 0;
                 const nbNC = controles.filter(c => c === false).length;
 
                 const row = document.createElement('tr');
@@ -2408,7 +2364,6 @@
                     : '';
                 row.innerHTML = `
                     <td>${new Date(d.dateControle).toLocaleDateString('fr-FR')}</td>
-                    <td>${d.agence || '—'}</td>
                     <td>${d.bailleur}</td>
                     <td>${d.nomClient}</td>
                     <td>${d.ville}</td>
@@ -2432,7 +2387,7 @@
             }
 
             const headers = [
-                'Date', 'Agence', 'Bailleur', 'Code Logement', 'Client', 'Adresse', 'Ville',
+                'Date', 'Client', 'Code Logement', 'Nom du client', 'Adresse', 'Ville',
                 'Type Prestation', 'Intervenant', 'Contrôleur',
                 'Présentation', 'Nettoyage', 'Respect RDV',
                 'Bouches Extraction', 'DAAF', 'Modules Entrée', 'Ventouse', 'Réseau Gaz',
@@ -2443,14 +2398,13 @@
             let csv = headers.join(';') + '\n';
 
             filteredData.forEach(d => {
-                const controles = Object.values(d.controles || {});
+                const controles = Object.values(d.controles || {}).filter(c => c !== null && c !== undefined);
                 const conformes = controles.filter(c => c === true).length;
-                const tauxConf = Math.round((conformes / controles.length) * 100);
+                const tauxConf = controles.length ? Math.round((conformes / controles.length) * 100) : 0;
                 const nbNC = controles.filter(c => c === false).length;
 
                 const row = [
                     new Date(d.dateControle).toLocaleDateString('fr-FR'),
-                    d.agence || '',
                     d.bailleur,
                     d.codeLogement,
                     d.nomClient,
@@ -2462,19 +2416,19 @@
                     d.presentation,
                     d.nettoyage,
                     d.respect,
-                    d.controles.bouchesExtraction ? 'Oui' : 'Non',
-                    d.controles.daaf ? 'Oui' : 'Non',
-                    d.controles.modulesEntree ? 'Oui' : 'Non',
-                    d.controles.ventouse ? 'Oui' : 'Non',
-                    d.controles.reseauGaz ? 'Oui' : 'Non',
-                    d.controles.liaison ? 'Oui' : 'Non',
-                    d.controles.robinetGaz ? 'Oui' : 'Non',
-                    d.controles.trous ? 'Oui' : 'Non',
-                    d.controles.flexibleGaz ? 'Oui' : 'Non',
-                    d.controles.co ? 'Oui' : 'Non',
-                    d.controles.chaudiere ? 'Oui' : 'Non',
-                    d.controles.attestation ? 'Oui' : 'Non',
-                    d.controles.ventilation ? 'Oui' : 'Non',
+                    ouiNon(d.controles.bouchesExtraction),
+                    ouiNon(d.controles.daaf),
+                    ouiNon(d.controles.modulesEntree),
+                    ouiNon(d.controles.ventouse),
+                    ouiNon(d.controles.reseauGaz),
+                    ouiNon(d.controles.liaison),
+                    ouiNon(d.controles.robinetGaz),
+                    ouiNon(d.controles.trous),
+                    ouiNon(d.controles.flexibleGaz),
+                    ouiNon(d.controles.co),
+                    ouiNon(d.controles.chaudiere),
+                    ouiNon(d.controles.attestation),
+                    ouiNon(d.controles.ventilation),
                     d.mesurePa || '',
                     d.remarque || '',
                     tauxConf,
