@@ -725,6 +725,10 @@
                             <input type="checkbox" id="ventilation">
                             <label for="ventilation">Ventilation fonctionnelle et conforme</label>
                         </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="depannageConforme">
+                            <label for="depannageConforme">Dépannage conforme à la demande et aux procédures</label>
+                        </div>
                     </div>
 
                     <div class="form-row" style="margin-top: 20px;">
@@ -1057,14 +1061,20 @@
             co: 'CO ambiant',
             chaudiere: 'Chaudière',
             attestation: 'Attestation',
-            ventilation: 'Ventilation'
+            ventilation: 'Ventilation',
+            depannageConforme: 'Dépannage conforme'
         };
 
         const REQUIRED_BY_TYPE = {
-            'Visite préventive': Object.keys(CONTROL_LABELS),
-            'Dépannage': ['daaf', 'reseauGaz', 'flexibleGaz', 'co', 'ventouse', 'robinetGaz'],
+            'Visite préventive': Object.keys(CONTROL_LABELS).filter(k => k !== 'depannageConforme'),
+            'Dépannage': ['daaf', 'reseauGaz', 'flexibleGaz', 'co', 'ventouse', 'robinetGaz', 'depannageConforme'],
             'Installation': ['ventouse', 'reseauGaz', 'liaison', 'trous', 'co', 'attestation', 'ventilation']
         };
+
+// Sans type choisi / type inconnu : tout est requis sauf le point réservé au dépannage
+        function isControlRequired(req, k) {
+            return req ? req.includes(k) : k !== 'depannageConforme';
+        }
 
         function getSelectedType() {
             const r = document.querySelector('input[name="typePrestation"]:checked');
@@ -1079,10 +1089,11 @@
                 const el = document.getElementById(k);
                 if (!el) return;
                 const item = el.closest('.checkbox-item');
-                const isReq = !req || req.includes(k);
+                const isReq = isControlRequired(req, k);
                 el.disabled = !isReq;
                 item.classList.toggle('not-required', !isReq);
                 item.classList.toggle('required', !!req && isReq);
+                item.style.display = (k === 'depannageConforme' && !isReq) ? 'none' : '';
             });
             const hint = document.getElementById('requiredHint');
             if (!hint) return;
@@ -1100,7 +1111,7 @@
             const req = REQUIRED_BY_TYPE[getSelectedType()];
             const out = {};
             Object.keys(CONTROL_LABELS).forEach(k => {
-                const isReq = !req || req.includes(k);
+                const isReq = isControlRequired(req, k);
                 out[k] = isReq ? document.getElementById(k).checked : null;
             });
             return out;
@@ -1112,7 +1123,7 @@
             const src = d.controles || {};
             const out = {};
             Object.keys(CONTROL_LABELS).forEach(k => {
-                const isReq = !req || req.includes(k);
+                const isReq = isControlRequired(req, k);
                 out[k] = (isReq && src[k] !== undefined && src[k] !== null) ? !!src[k] : null;
             });
             return out;
@@ -1452,6 +1463,13 @@
                     }
                 }
             });
+
+            // Point réservé au dépannage
+            if (data.controles.depannageConforme !== null && data.controles.depannageConforme !== undefined) {
+                const yDep = y + 49;
+                doc.text('Dépannage conforme à la demande et aux procédures :', 15, yDep);
+                drawYesNo(data.controles.depannageConforme, 130, 147, yDep);
+            }
 
             y += 55;
             if (data.remarque) {
@@ -1974,7 +1992,8 @@
                 co: 'CO ambiant',
                 chaudiere: 'Chaudière',
                 attestation: 'Attestation',
-                ventilation: 'Ventilation'
+                ventilation: 'Ventilation',
+            depannageConforme: 'Dépannage conforme'
             };
 
             Object.keys(labels).forEach(key => {
@@ -2156,7 +2175,8 @@
                 co: 'CO ambiant',
                 chaudiere: 'Chaudière',
                 attestation: 'Attestation',
-                ventilation: 'Ventilation'
+                ventilation: 'Ventilation',
+            depannageConforme: 'Dépannage conforme'
             };
 
             filteredData.forEach(d => {
@@ -2392,7 +2412,7 @@
                 'Présentation', 'Nettoyage', 'Respect RDV',
                 'Bouches Extraction', 'DAAF', 'Modules Entrée', 'Ventouse', 'Réseau Gaz',
                 'Liaison', 'Robinet Gaz', 'Trous', 'Flexible Gaz', 'CO', 'Chaudière',
-                'Attestation', 'Ventilation', 'Mesure Pa', 'Remarque', 'Taux Conformité (%)', 'Nb NC'
+                'Attestation', 'Ventilation', 'Dépannage conforme', 'Mesure Pa', 'Remarque', 'Taux Conformité (%)', 'Nb NC'
             ];
 
             let csv = headers.join(';') + '\n';
@@ -2429,6 +2449,7 @@
                     ouiNon(d.controles.chaudiere),
                     ouiNon(d.controles.attestation),
                     ouiNon(d.controles.ventilation),
+                    ouiNon(d.controles.depannageConforme),
                     d.mesurePa || '',
                     d.remarque || '',
                     tauxConf,
